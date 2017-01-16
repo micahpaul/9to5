@@ -35,15 +35,24 @@ namespace WpfApplication1
             Connection = new SQLiteConnection("Data Source=" + DbFileName + ";Version=3;");
         }
 
-        public void InitializeTables(List<FieldListItem> _List)
+        public void InitializeTable(String _TableName, List<FieldListItem> _List)
         {
             try
             {
-                Connection.Open();
                 String nl = "\r\n";
-                String Sql  = "CREATE TABLE IF NOT EXISTS TXN (" + nl;
-                Sql += "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE," + nl;
-                Sql += "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE," + nl;
+                String Sql  = "CREATE TABLE IF NOT EXISTS " + _TableName + " (" + nl;
+                Sql += "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE";
+                
+                foreach(FieldListItem item in _List)
+                {
+                    Sql += nl + ", " + item.FieldSql();
+                }
+
+                Sql += nl + ")";
+
+                Connection.Open();
+                SQLiteCommand Command = new SQLiteCommand(Sql, Connection);
+                Command.ExecuteNonQuery();
             }
             catch( Exception e)
             {
@@ -57,18 +66,60 @@ namespace WpfApplication1
                 }
             }
         }
+
+        public void InsertRow(String _TableName, List<FieldListItem> _List)
+        {
+            try
+            {
+                SQLiteCommand Command = new SQLiteCommand(Connection);
+                String FieldList = "";
+                String ParamList = "";
+
+                foreach (FieldListItem item in _List)
+                {
+                    if( FieldList.Length > 0 )
+                    {
+                        FieldList += ", ";
+                        ParamList += ", ";
+                    }
+
+                    FieldList += item.DBFieldName;
+                    ParamList += "@" + item.DBFieldName;
+                    Command.Parameters.Add(item.GetParam());
+                }
+
+                String nl = "\r\n";
+                String Sql  = "INSERT INTO " + _TableName + " (" + FieldList + ")" + nl;
+                       Sql += "VALUES (" + ParamList + ");";
+
+                Connection.Open();
+                Command.CommandText = Sql;
+                Command.CommandType = System.Data.CommandType.Text;
+                Command.ExecuteNonQuery();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("InsertRow() Error: {0}", e.Message);
+            }
+            finally
+            {
+                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
+                {
+                    Connection.Close();
+                }
+            }
+        }
     }
 
     public partial class MainWindow : Window
     {
-        DBConnection DBConnection = new DBConnection();
         private List<FieldListItem> FieldList = new List<FieldListItem>();
 
         public MainWindow()
         {
             InitializeComponent();
             BuildFieldList();
-            //InitializeDB();
+            InitializeDB();
         }
 
         private void BuildFieldList()
@@ -97,6 +148,12 @@ namespace WpfApplication1
             ComboBox box = new ComboBox();
             SalesTypeBinder Binder = new SalesTypeBinder(box);
             FieldList.Add(new FieldListItem("Type of Sale", "SAL_TYPE", FieldType.ftChoice, box));
+        }
+
+        private void InitializeDB()
+        {
+            DBConnection DBConnection = new DBConnection();
+            DBConnection.InitializeTable("TXN", FieldList);
         }
 
         private void SaleButton_Click(object sender, RoutedEventArgs e)

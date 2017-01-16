@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApplication1"
         mc:Ignorable="d"
-        Title="Enter New Sales" Height="500" Width="700" HorizontalAlignment="Left" VerticalAlignment="Top">
+        Title="Enter New Sales" Height="530" Width="700" HorizontalAlignment="Left" VerticalAlignment="Top" Closed="SalesWindow1_Closed">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
     <Grid x:Name="MainGrid" Background="#FFF8F8F8" local:MarginSetter.Margin="10">
         <Grid.RowDefinitions>
@@ -19,7 +19,7 @@
             </Grid.ColumnDefinitions>
             <Grid x:Name="FieldGrid" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" VerticalAlignment="Top" local:MarginSetter.Margin="5"/>
             <Button x:Name="SaveButton" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" Click="Button_Click" Height="50" Width="120">Save Transaction</Button>
-            <Button x:Name="PrintInvoiceButton" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50" Width="120" Click="PrintInvoiceButton_Click">Print Invoice</Button>
+            <Button x:Name="GenerateInvoiceButton" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50" Width="120" Click="GenerateInvoiceButton_Click">Generate Invoice</Button>
             <Button x:Name="CloseButton" Grid.Row="1" Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center" Height="50" Width="120" Click="CloseButton_Click">Close</Button>
         </Grid>
     </ScrollViewer>

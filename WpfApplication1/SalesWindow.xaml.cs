@@ -11,6 +11,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Data.SQLite;
 
 namespace WpfApplication1
 {
@@ -68,7 +69,6 @@ namespace WpfApplication1
     
     // Non-Visual
     public enum SaleType { Retail, Wholesale, RetailOutOfState };
-
     public struct SaleTypeInfo
     {
         public SaleType Type;
@@ -100,7 +100,6 @@ namespace WpfApplication1
             }
         }
     }
-
     // Visual auxilliary
     public class SalesTypeBinder
     {
@@ -145,7 +144,12 @@ namespace WpfApplication1
                     case FieldType.ftChoice:
                         InputElement = new ComboBox();
                         break;
+                    case FieldType.ftDate:
+                        InputElement = new DatePicker();
+                        break;
                     case FieldType.ftString:
+                    case FieldType.ftInt:
+                    case FieldType.ftReal:
                     default:
                         InputElement = new TextBox();
                         break;
@@ -180,19 +184,133 @@ namespace WpfApplication1
         {
             return DBFieldName + " " + GetSqlType();
         }
+
+        public void ClearValue()
+        {
+            if(InputElement is TextBox)
+            {
+                TextBox box = InputElement as TextBox;
+                box.Text = "";
+            }
+            else if(InputElement is DatePicker)
+            {
+                DatePicker pck = InputElement as DatePicker;
+                pck.Text = "";
+            }
+            else if (InputElement is ComboBox)
+            {
+                ComboBox cmb = InputElement as ComboBox;
+                cmb.SelectedIndex = 0;
+            }
+        }
+
+        public bool InputIsValid(out String _InvalidField)
+        {
+            bool Result = false;
+
+            switch (FieldType)
+            {
+                case FieldType.ftChoice:
+                case FieldType.ftDate:
+                case FieldType.ftString:
+                    {
+                        Result = true;
+                        break;
+                    }
+                case FieldType.ftInt:
+                case FieldType.ftReal:
+                    {
+                        TextBox box = InputElement as TextBox;
+                        if (box.Text.Length > 0)
+                        {
+                            if (FieldType == FieldType.ftInt)
+                            {
+                                int n;
+                                Result = int.TryParse(box.Text, out n);
+                            }
+                            else
+                            {
+                                double d;
+                                Result = double.TryParse(box.Text, out d);
+                            }
+                        }
+                        else
+                        {
+                            Result = true;
+                        }
+
+                        break;
+                    }
+                default:
+                    Result = false;
+                    break;
+            }
+
+            _InvalidField = Result ? "" : DisplayName;
+            return Result;
+        }
+
+        public SQLiteParameter GetParam()
+        {
+            SQLiteParameter Param = null;
+
+            switch (FieldType)
+            {
+                case FieldType.ftChoice:
+                    Param = new SQLiteParameter()
+                case FieldType.ftDate:
+                case FieldType.ftString:
+                    {
+                        Result = true;
+                        break;
+                    }
+                case FieldType.ftInt:
+                case FieldType.ftReal:
+                    {
+                        TextBox box = InputElement as TextBox;
+                        if (box.Text.Length > 0)
+                        {
+                            if (FieldType == FieldType.ftInt)
+                            {
+                                int n;
+                                Result = int.TryParse(box.Text, out n);
+                            }
+                            else
+                            {
+                                double d;
+                                Result = double.TryParse(box.Text, out d);
+                            }
+                        }
+                        else
+                        {
+                            Result = true;
+                        }
+
+                        break;
+                    }
+                default:
+                    Result = false;
+                    break;
+            }
+
+            _InvalidField = Result ? "" : DisplayName;
+            return Result;
+        }
     }
 
     public partial class SalesWindow : Window
     {
         private bool IsSaved = false;
+        private List<FieldListItem> FieldList;
 
         public SalesWindow( List<FieldListItem> _FieldList )
         {
+            FieldList = _FieldList;
             InitializeComponent();
-            FillGrids(_FieldList);
+            FillGrids();
         }
 
-        private void FillGrids(List<FieldListItem> _FieldList)
+        private void FillGrids()
         {
             // Add 4 columns
             foreach (int ix in Enumerable.Range(0, 4))
@@ -200,20 +318,20 @@ namespace WpfApplication1
                 FieldGrid.ColumnDefinitions.Add(new ColumnDefinition());
             }
 
-            GridLength height = new GridLength(30);
+            GridLength height = new GridLength(35);
             int CurrentRow = 0;
             int Col0 = 0;
 
-            for (int ix = 0; ix < _FieldList.Count; ix++)
+            for (int ix = 0; ix < FieldList.Count; ix++)
             {
-                if(Col0 == 0 && ix > (_FieldList.Count / 2))
+                if(Col0 == 0 && ix >= (FieldList.Count / 2))
                 {
                     Col0 = 2;
                     CurrentRow = 0;
                 }
 
-                // Add a row to grid if we're in the first half
-                if (Col0 == 0)
+                // Add a row to grid if it doesn't have enough
+                if (( FieldGrid.RowDefinitions.Count - 1) < CurrentRow )
                 {
                     RowDefinition row = new RowDefinition();
                     row.Height = height;
@@ -222,7 +340,7 @@ namespace WpfApplication1
 
                 // in Col0, add a label
                 TextBlock txt = new TextBlock();
-                txt.Text = _FieldList[ix].DisplayName + ":";
+                txt.Text = FieldList[ix].DisplayName + ":";
                 txt.HorizontalAlignment = HorizontalAlignment.Right;
                 txt.VerticalAlignment = VerticalAlignment.Center;
                 Grid.SetRow(txt, CurrentRow);
@@ -230,7 +348,7 @@ namespace WpfApplication1
                 FieldGrid.Children.Add(txt);
 
                 // in Col0 + 1 of the row, add a control to enter the data
-                UIElement input = _FieldList[ix].InputElement;
+                UIElement input = FieldList[ix].InputElement;
                 Grid.SetRow(input, CurrentRow);
                 Grid.SetColumn(input, Col0 + 1);
                 FieldGrid.Children.Add(input);
@@ -242,10 +360,11 @@ namespace WpfApplication1
         private bool Save()
         {
             IsSaved = false;
+            String InvalidFields;
 
-            if ( ! ValidateFields() )
+            if ( ! ValidateFields(out InvalidFields) )
             {
-                MessageBox.Show("Unable to save; one or more fields not valid.");
+                MessageBox.Show("Unable to save. The following fields are not valid: " + InvalidFields + ".");
             }
             else
             {
@@ -262,26 +381,55 @@ namespace WpfApplication1
             Save();    
         }
 
-        private void PrintInvoiceButton_Click(object sender, RoutedEventArgs e)
+        private void GenerateInvoiceButton_Click(object sender, RoutedEventArgs e)
         {
             if (!IsSaved && !Save())
             {
-                MessageBox.Show("You can't print an unsaved invoice.");
+                MessageBox.Show("You can't generate an unsaved invoice.");
             }
             else
             {
-                MessageBox.Show("Printing... Just kidding; that's not implemented yet.");
+                MessageBox.Show("Generating... Just kidding; that's not implemented yet.");
             }
         }
 
-        private bool ValidateFields()
+        private bool ValidateFields(out String _InvalidFields)
         {
-            return true;
+            _InvalidFields = "";
+            bool Result = true;
+            String InvalidField = "";
+
+            foreach(FieldListItem i in FieldList)
+            {
+                if(!i.InputIsValid(out InvalidField))
+                {
+                    Result = false;
+
+                    if(_InvalidFields.Length > 0)
+                    {
+                        _InvalidFields += ", ";
+                    }
+
+                    _InvalidFields += InvalidField;
+                }
+            }
+
+            return Result;
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        private void SalesWindow1_Closed(object sender, EventArgs e)
+        {
+            FieldGrid.Children.Clear();
+
+            foreach (FieldListItem i in FieldList)
+            {
+                i.ClearValue();
+            }
         }
     }
 }
