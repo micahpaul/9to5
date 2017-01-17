@@ -40,10 +40,10 @@ namespace WpfApplication1
             try
             {
                 String nl = "\r\n";
-                String Sql  = "CREATE TABLE IF NOT EXISTS " + _TableName + " (" + nl;
+                String Sql = "CREATE TABLE IF NOT EXISTS " + _TableName + " (" + nl;
                 Sql += "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE";
-                
-                foreach(FieldListItem item in _List)
+
+                foreach (FieldListItem item in _List)
                 {
                     Sql += nl + ", " + item.FieldSql();
                 }
@@ -54,48 +54,55 @@ namespace WpfApplication1
                 SQLiteCommand Command = new SQLiteCommand(Sql, Connection);
                 Command.ExecuteNonQuery();
             }
-            catch( Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine("InitializeTables() Error: {0}", e.Message);
             }
             finally
             {
-                if ( Connection != null && Connection.State != System.Data.ConnectionState.Closed )
+                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
                 {
                     Connection.Close();
                 }
             }
         }
 
-        public void InsertRow(String _TableName, List<FieldListItem> _List)
+        public long InsertRow(String _TableName, List<FieldListItem> _List)
         {
+            long Result = 0;
+
             try
             {
-                SQLiteCommand Command = new SQLiteCommand(Connection);
-                String FieldList = "";
-                String ParamList = "";
+                Dictionary<String, object> InsertDict = new Dictionary<String, object>();
 
                 foreach (FieldListItem item in _List)
                 {
-                    if( FieldList.Length > 0 )
-                    {
-                        FieldList += ", ";
-                        ParamList += ", ";
-                    }
-
-                    FieldList += item.DBFieldName;
-                    ParamList += "@" + item.DBFieldName;
-                    Command.Parameters.Add(item.GetParam());
+                    item.InsertField(InsertDict);
                 }
 
-                String nl = "\r\n";
-                String Sql  = "INSERT INTO " + _TableName + " (" + FieldList + ")" + nl;
-                       Sql += "VALUES (" + ParamList + ");";
+                if (InsertDict.Count > 0)
+                {
+                    Connection.Open();
+                    SQLiteCommand Command = new SQLiteCommand(Connection);
+                    String FieldNames = "";
 
-                Connection.Open();
-                Command.CommandText = Sql;
-                Command.CommandType = System.Data.CommandType.Text;
-                Command.ExecuteNonQuery();
+                    foreach (KeyValuePair<String, object> entry in InsertDict)
+                    {
+                        if (FieldNames.Length > 0)
+                        {
+                            FieldNames += ", ";
+                        }
+
+                        FieldNames += entry.Key;
+                        Command.Parameters.Add(new SQLiteParameter("@" + entry.Key, entry.Value));
+                    }
+
+                    Command.CommandText = "INSERT INTO " + _TableName + " (" + FieldNames + ")\r\n";
+                    Command.CommandText += "VALUES (" + "@" + FieldNames.Replace(", ", ", @") + ")";
+
+                    Command.CommandType = System.Data.CommandType.Text;
+                    Result = Command.ExecuteNonQuery();
+                }
             }
             catch (Exception e)
             {
@@ -108,6 +115,8 @@ namespace WpfApplication1
                     Connection.Close();
                 }
             }
+
+            return Result;
         }
     }
 
@@ -128,13 +137,13 @@ namespace WpfApplication1
             FieldList.Add(new FieldListItem("Last Name", "CST_LNAME", FieldType.ftString));
             FieldList.Add(new FieldListItem("Address 1", "CST_ADDRESS_1", FieldType.ftString));
             FieldList.Add(new FieldListItem("Address 2", "CST_ADDRESS_2", FieldType.ftString));
-            FieldList.Add(new FieldListItem("City", "CST_CITY", FieldType.ftString));
-            FieldList.Add(new FieldListItem("State", "CST_STATE", FieldType.ftString));
+            FieldList.Add(new FieldListItem("City", "CST_CITY", FieldType.ftString, "TOPEKA"));
+            FieldList.Add(new FieldListItem("State", "CST_STATE", FieldType.ftString, "KS"));
             FieldList.Add(new FieldListItem("Zip", "CST_ZIP", FieldType.ftString));
             FieldList.Add(new FieldListItem("Phone Number", "CST_PHONE", FieldType.ftString));
-            FieldList.Add(new FieldListItem("Warranty Coverage", "WAR_COVERAGE", FieldType.ftReal));
-            FieldList.Add(new FieldListItem("Warranty Period", "WAR_PERIOD", FieldType.ftString));
-            FieldList.Add(new FieldListItem("Warranty Miles", "WAR_MILES", FieldType.ftInt));
+            FieldList.Add(new FieldListItem("Warranty Coverage", "WAR_COVERAGE", FieldType.ftReal, "3000.00"));
+            FieldList.Add(new FieldListItem("Warranty Period", "WAR_PERIOD", FieldType.ftString, "36 MONTHS"));
+            FieldList.Add(new FieldListItem("Warranty Miles", "WAR_MILES", FieldType.ftInt, "1000"));
             FieldList.Add(new FieldListItem("Warranty Deductible", "WAR_DEDUCTIBLE", FieldType.ftReal));
             FieldList.Add(new FieldListItem("VIN", "VEH_VIN", FieldType.ftString));
             FieldList.Add(new FieldListItem("Year", "VEH_YEAR", FieldType.ftInt));
@@ -147,7 +156,7 @@ namespace WpfApplication1
             FieldList.Add(new FieldListItem("Trade-In Amount", "SAL_TRADE_AMT", FieldType.ftReal));
             ComboBox box = new ComboBox();
             SalesTypeBinder Binder = new SalesTypeBinder(box);
-            FieldList.Add(new FieldListItem("Type of Sale", "SAL_TYPE", FieldType.ftChoice, box));
+            FieldList.Add(new FieldListItem("Type of Sale", "SAL_TYPE", FieldType.ftChoice, "", box));
         }
 
         private void InitializeDB()

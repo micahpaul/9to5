@@ -66,13 +66,13 @@ namespace WpfApplication1
 
     // Non-Visual
     public enum FieldType { ftUndefined, ftString, ftInt, ftReal, ftDate, ftChoice };
-    
+
     // Non-Visual
     public enum SaleType { Retail, Wholesale, RetailOutOfState };
     public struct SaleTypeInfo
     {
         public SaleType Type;
-        public char DBCode;
+        public String DBCode;
         public String FriendlyName;
 
         public SaleTypeInfo(SaleType _Type)
@@ -82,19 +82,19 @@ namespace WpfApplication1
             switch (Type)
             {
                 case SaleType.Retail:
-                    DBCode = 'R';
+                    DBCode = "R";
                     FriendlyName = "Retail";
                     break;
                 case SaleType.Wholesale:
-                    DBCode = 'W';
+                    DBCode = "W";
                     FriendlyName = "Wholesale";
                     break;
                 case SaleType.RetailOutOfState:
-                    DBCode = 'O';
+                    DBCode = "O";
                     FriendlyName = "Retail - Out of State";
                     break;
                 default:
-                    DBCode = ' ';
+                    DBCode = "";
                     FriendlyName = "None";
                     break;
             }
@@ -103,13 +103,14 @@ namespace WpfApplication1
     // Visual auxilliary
     public class SalesTypeBinder
     {
-        public Dictionary<SaleType, String> Dict = new Dictionary<SaleType, String>();
+        public Dictionary<String, String> Dict = new Dictionary<String, String>();
 
         public SalesTypeBinder(ComboBox _Box)
         {
             foreach (SaleType type in Enum.GetValues(typeof(SaleType)))
             {
-                Dict.Add(type, new SaleTypeInfo(type).FriendlyName);
+                SaleTypeInfo info = new SaleTypeInfo(type);
+                Dict.Add(info.DBCode, info.FriendlyName);
             }
 
             _Box.ItemsSource = Dict;
@@ -127,13 +128,14 @@ namespace WpfApplication1
         public FieldType FieldType = FieldType.ftUndefined;
         public UIElement InputElement;
 
-        public FieldListItem( String _DisplayName, String _DBFieldName, FieldType _Type, UIElement _InputElement=null )
+        public FieldListItem(String _DisplayName, String _DBFieldName, FieldType _Type,
+                             String _Default="", UIElement _InputElement = null)
         {
-            DisplayName    = _DisplayName;
-            DBFieldName    = _DBFieldName;
-            FieldType      = _Type;
+            DisplayName = _DisplayName;
+            DBFieldName = _DBFieldName;
+            FieldType = _Type;
 
-            if( _InputElement != null )
+            if (_InputElement != null)
             {
                 InputElement = _InputElement;
             }
@@ -145,16 +147,33 @@ namespace WpfApplication1
                         InputElement = new ComboBox();
                         break;
                     case FieldType.ftDate:
-                        InputElement = new DatePicker();
+                        DatePicker pck = new DatePicker();
+                        pck.SelectedDate = DateTime.Today;
+                        InputElement = pck;
                         break;
                     case FieldType.ftString:
                     case FieldType.ftInt:
                     case FieldType.ftReal:
                     default:
-                        InputElement = new TextBox();
+                        TextBox txt = new TextBox();
+                        txt.CharacterCasing = CharacterCasing.Upper;
+                        txt.GotFocus += TextBox_GotFocus;
+
+                        if (_Default.Length > 0)
+                        {
+                            txt.Text = _Default;
+                        }
+
+                        InputElement = txt;
                         break;
                 }
             }
+        }
+
+        void TextBox_GotFocus(object sender, EventArgs e)
+        {
+            TextBox box = sender as TextBox;
+            box.SelectAll();
         }
 
         private String GetSqlType()
@@ -187,12 +206,12 @@ namespace WpfApplication1
 
         public void ClearValue()
         {
-            if(InputElement is TextBox)
+            if (InputElement is TextBox)
             {
                 TextBox box = InputElement as TextBox;
                 box.Text = "";
             }
-            else if(InputElement is DatePicker)
+            else if (InputElement is DatePicker)
             {
                 DatePicker pck = InputElement as DatePicker;
                 pck.Text = "";
@@ -250,51 +269,68 @@ namespace WpfApplication1
             return Result;
         }
 
-        public SQLiteParameter GetParam()
+        public void InsertField(Dictionary<String, object> _Dict)
         {
-            SQLiteParameter Param = null;
+            object val = null;
 
             switch (FieldType)
             {
                 case FieldType.ftChoice:
-                    Param = new SQLiteParameter()
-                case FieldType.ftDate:
-                case FieldType.ftString:
+                    ComboBox box = InputElement as ComboBox;
+
+                    if (box.SelectedIndex >= 0)
                     {
-                        Result = true;
-                        break;
+                        val = box.SelectedValue;
                     }
+
+                    break;
+                case FieldType.ftDate:
+                    DatePicker pck = InputElement as DatePicker;
+
+                    if (pck.SelectedDate != null)
+                    {
+                        val = pck.SelectedDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    }
+
+                    break;
+                case FieldType.ftString:
                 case FieldType.ftInt:
                 case FieldType.ftReal:
-                    {
-                        TextBox box = InputElement as TextBox;
-                        if (box.Text.Length > 0)
-                        {
-                            if (FieldType == FieldType.ftInt)
-                            {
-                                int n;
-                                Result = int.TryParse(box.Text, out n);
-                            }
-                            else
-                            {
-                                double d;
-                                Result = double.TryParse(box.Text, out d);
-                            }
-                        }
-                        else
-                        {
-                            Result = true;
-                        }
+                    TextBox txt = InputElement as TextBox;
 
-                        break;
+                    if (txt.Text.Length > 0)
+                    {
+                        if (FieldType == FieldType.ftString)
+                        {
+                            val = txt.Text;
+                        }
+                        else if (FieldType == FieldType.ftInt)
+                        {
+                            int i;
+
+                            if (int.TryParse(txt.Text, out i))
+                            {
+                                val = i;
+                            }
+                        }
+                        else if (FieldType == FieldType.ftReal)
+                        {
+                            double d;
+
+                            if (double.TryParse(txt.Text, out d))
+                            {
+                                val = d;
+                            }
+                        }
                     }
-                default:
-                    Result = false;
+
                     break;
             }
 
-            _InvalidField = Result ? "" : DisplayName;
-            return Result;
+            if(val != null)
+            {
+                _Dict.Add(DBFieldName, val);
+            }
         }
     }
 
@@ -303,7 +339,7 @@ namespace WpfApplication1
         private bool IsSaved = false;
         private List<FieldListItem> FieldList;
 
-        public SalesWindow( List<FieldListItem> _FieldList )
+        public SalesWindow(List<FieldListItem> _FieldList)
         {
             FieldList = _FieldList;
             InitializeComponent();
@@ -324,14 +360,14 @@ namespace WpfApplication1
 
             for (int ix = 0; ix < FieldList.Count; ix++)
             {
-                if(Col0 == 0 && ix >= (FieldList.Count / 2))
+                if (Col0 == 0 && ix >= (FieldList.Count / 2))
                 {
                     Col0 = 2;
                     CurrentRow = 0;
                 }
 
                 // Add a row to grid if it doesn't have enough
-                if (( FieldGrid.RowDefinitions.Count - 1) < CurrentRow )
+                if ((FieldGrid.RowDefinitions.Count - 1) < CurrentRow)
                 {
                     RowDefinition row = new RowDefinition();
                     row.Height = height;
@@ -353,6 +389,11 @@ namespace WpfApplication1
                 Grid.SetColumn(input, Col0 + 1);
                 FieldGrid.Children.Add(input);
 
+                if (ix == 0)
+                {
+                    input.Focus();
+                }
+
                 CurrentRow++;
             }
         }
@@ -362,15 +403,23 @@ namespace WpfApplication1
             IsSaved = false;
             String InvalidFields;
 
-            if ( ! ValidateFields(out InvalidFields) )
+            if (!ValidateFields(out InvalidFields))
             {
                 MessageBox.Show("Unable to save. The following fields are not valid: " + InvalidFields + ".");
             }
             else
             {
-                //System.Data.sqllite
-                MessageBox.Show("Saving... Just kidding; that's not implemented yet.");
-                IsSaved = true;
+                DBConnection con = new DBConnection();
+                if( con.InsertRow("TXN", FieldList) > 0 )
+                {
+                    MessageBox.Show("Saved!");
+                    IsSaved = true;
+                }
+                else
+                {
+                    MessageBox.Show("Uh oh. Not saved.");
+                    IsSaved = false;
+                }
             }
 
             return IsSaved;
@@ -378,7 +427,7 @@ namespace WpfApplication1
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            Save();    
+            Save();
         }
 
         private void GenerateInvoiceButton_Click(object sender, RoutedEventArgs e)
@@ -399,13 +448,13 @@ namespace WpfApplication1
             bool Result = true;
             String InvalidField = "";
 
-            foreach(FieldListItem i in FieldList)
+            foreach (FieldListItem i in FieldList)
             {
-                if(!i.InputIsValid(out InvalidField))
+                if (!i.InputIsValid(out InvalidField))
                 {
                     Result = false;
 
-                    if(_InvalidFields.Length > 0)
+                    if (_InvalidFields.Length > 0)
                     {
                         _InvalidFields += ", ";
                     }

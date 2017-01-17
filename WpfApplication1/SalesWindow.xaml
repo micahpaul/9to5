@@ -7,11 +7,11 @@
         mc:Ignorable="d"
         Title="Enter New Sales" Height="530" Width="700" HorizontalAlignment="Left" VerticalAlignment="Top" Closed="SalesWindow1_Closed">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <Grid x:Name="MainGrid" Background="#FFF8F8F8" local:MarginSetter.Margin="10">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-        </Grid.RowDefinitions>
+        <Grid x:Name="MainGrid" Background="#FFF8F8F8" local:MarginSetter.Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
