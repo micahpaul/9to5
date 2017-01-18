@@ -8,9 +8,9 @@
         Title="9-5 Auto: Sales Entry and Reporting" Height="200" Width="610">
     <Grid Background="#FFF8F8F8">
         <Button x:Name="SaleButton" Content="_Enter New Sale" HorizontalAlignment="Left" Margin="391,23,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="SaleButton_Click"/>
-        <Button x:Name="ReportButton" Content="_Generate Reports / Invoices" HorizontalAlignment="Left" Margin="391,108,0,0" VerticalAlignment="Top" Width="170" Height="25"/>
+        <Button x:Name="ReportButton" Content="_Generate Reports" HorizontalAlignment="Left" Margin="391,108,0,0" VerticalAlignment="Top" Width="170" Height="25"/>
         <Image x:Name="image" HorizontalAlignment="Left" Height="120" Margin="24,23,0,0" VerticalAlignment="Top" Width="336" Source="9-5Logo.png"/>
-        <Button x:Name="EditButton" Content="_Review / Edit Sales Data" HorizontalAlignment="Left" Margin="391,66,0,0" VerticalAlignment="Top" Width="170" Height="25"/>
+        <Button x:Name="EditButton" Content="_Review / Edit Sales Data" HorizontalAlignment="Left" Margin="391,66,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="EditButton_Click"/>
 
     </Grid>
 </Window>

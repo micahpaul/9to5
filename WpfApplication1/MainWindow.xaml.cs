@@ -14,12 +14,33 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.IO;
 using System.Data.SQLite;
+using System.Data;
 
 namespace WpfApplication1
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
+    /// 
+
+    /*
+        To Do:
+        1. InitializeTable() - ensure DB columns are consistent with field list (show warning / fix if not?)
+        2. On close, back up DB to a configured location
+        3. Configurable default values: Table? .cfg file?
+        4. Re-default FieldListItem InputElements when re-opening the entry screen
+        5. Persist DB changes from History form - https://www.codeproject.com/articles/153407/wpf-and-sqlite-database; https://msdn.microsoft.com/en-us/library/y2ad8t9c.aspx
+        6. History form date filter?
+        7. Refactoring: Decouple and Generalize classes as much as possible
+        8. Move various classes to more appropriate .cs files
+        9. Review "using" directives; update appropriately
+        10. Implement Invoice Generation
+        11. Allow Invoice Generation from History form
+        12. Implement Monthly Sales Tax Report (date filter; update Excel template)
+        13. VIN validation: 17 characters exactly
+        14. VIN API? https://vpic.nhtsa.dot.gov/api/Home/Index/LanguageExamples; https://vpic.nhtsa.dot.gov/api/
+    */
+
     public class DBConnection
     {
         private const String DbFileName = "9To5.sqlite";
@@ -118,6 +139,32 @@ namespace WpfApplication1
 
             return Result;
         }
+
+        public void PopulateDataGridFromTable(String _TableName, DataGrid _Grid)
+        {
+            Connection.Open();
+
+            try
+            {
+                String SelectSql = "SELECT * FROM " + _TableName;
+                SQLiteDataAdapter da = new SQLiteDataAdapter(SelectSql, Connection);
+                DataTable dt = new DataTable(_TableName);
+                da.Fill(dt);
+                _Grid.DataContext = dt.DefaultView;
+                //da.Update(dt);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("PopulateDataGridFromTable() Error: {0}", e.Message);
+            }
+            finally
+            {
+                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
+                {
+                    Connection.Close();
+                }
+            }
+        }
     }
 
     public partial class MainWindow : Window
@@ -143,7 +190,7 @@ namespace WpfApplication1
             FieldList.Add(new FieldListItem("Phone Number", "CST_PHONE", FieldType.ftString));
             FieldList.Add(new FieldListItem("Warranty Coverage", "WAR_COVERAGE", FieldType.ftReal, "3000.00"));
             FieldList.Add(new FieldListItem("Warranty Period", "WAR_PERIOD", FieldType.ftString, "36 MONTHS"));
-            FieldList.Add(new FieldListItem("Warranty Miles", "WAR_MILES", FieldType.ftInt, "1000"));
+            FieldList.Add(new FieldListItem("Warranty Miles", "WAR_MILES", FieldType.ftInt, "36000"));
             FieldList.Add(new FieldListItem("Warranty Deductible", "WAR_DEDUCTIBLE", FieldType.ftReal));
             FieldList.Add(new FieldListItem("VIN", "VEH_VIN", FieldType.ftString));
             FieldList.Add(new FieldListItem("Year", "VEH_YEAR", FieldType.ftInt));
@@ -154,6 +201,9 @@ namespace WpfApplication1
             FieldList.Add(new FieldListItem("Date of Sale", "SAL_DATE", FieldType.ftDate));
             FieldList.Add(new FieldListItem("Sale Amount", "SAL_AMOUNT", FieldType.ftReal));
             FieldList.Add(new FieldListItem("Trade-In Amount", "SAL_TRADE_AMT", FieldType.ftReal));
+            FieldList.Add(new FieldListItem("Trade-In VIN", "SAL_TRADE_VIN", FieldType.ftString));
+            FieldList.Add(new FieldListItem("Trade-In Miles", "SAL_TRADE_MILES", FieldType.ftInt));
+            FieldList.Add(new FieldListItem("Tax Rate", "SAL_TAX_RATE", FieldType.ftReal, ".0915"));
             ComboBox box = new ComboBox();
             SalesTypeBinder Binder = new SalesTypeBinder(box);
             FieldList.Add(new FieldListItem("Type of Sale", "SAL_TYPE", FieldType.ftChoice, "", box));
@@ -170,6 +220,13 @@ namespace WpfApplication1
             SalesWindow salesWindow = new SalesWindow(FieldList);
             salesWindow.Owner = this;
             salesWindow.ShowDialog();
+        }
+
+        private void EditButton_Click(object sender, RoutedEventArgs e)
+        {
+            HistoryWindow historyWindow = new HistoryWindow(FieldList);
+            historyWindow.Owner = this;
+            historyWindow.ShowDialog();
         }
     }
 }

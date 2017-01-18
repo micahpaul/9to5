@@ -129,7 +129,7 @@ namespace WpfApplication1
         public UIElement InputElement;
 
         public FieldListItem(String _DisplayName, String _DBFieldName, FieldType _Type,
-                             String _Default="", UIElement _InputElement = null)
+                             String _Default = "", UIElement _InputElement = null)
         {
             DisplayName = _DisplayName;
             DBFieldName = _DBFieldName;
@@ -327,7 +327,7 @@ namespace WpfApplication1
                     break;
             }
 
-            if(val != null)
+            if (val != null)
             {
                 _Dict.Add(DBFieldName, val);
             }
@@ -410,7 +410,7 @@ namespace WpfApplication1
             else
             {
                 DBConnection con = new DBConnection();
-                if( con.InsertRow("TXN", FieldList) > 0 )
+                if (con.InsertRow("TXN", FieldList) > 0)
                 {
                     MessageBox.Show("Saved!");
                     IsSaved = true;
