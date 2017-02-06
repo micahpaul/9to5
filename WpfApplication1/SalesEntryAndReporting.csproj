@@ -78,6 +78,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SaleType.cs" />
+    <Compile Include="FieldListItem.cs" />
+    <Compile Include="MarginSetter.cs" />
+    <Compile Include="DBConnection.cs" />
     <Compile Include="SalesWindow.xaml.cs">
       <DependentUpon>SalesWindow.xaml</DependentUpon>
     </Compile>

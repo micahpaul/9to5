@@ -12,160 +12,31 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.IO;
-using System.Data.SQLite;
-using System.Data;
 
 namespace WpfApplication1
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    /// 
 
     /*
         To Do:
-        1. InitializeTable() - ensure DB columns are consistent with field list (show warning / fix if not?)
-        2. On close, back up DB to a configured location
-        3. Configurable default values: Table? .cfg file?
-        4. Re-default FieldListItem InputElements when re-opening the entry screen
-        5. Persist DB changes from History form - https://www.codeproject.com/articles/153407/wpf-and-sqlite-database; https://msdn.microsoft.com/en-us/library/y2ad8t9c.aspx
-        6. History form date filter?
-        7. Refactoring: Decouple and Generalize classes as much as possible
-        8. Move various classes to more appropriate .cs files
-        9. Review "using" directives; update appropriately
-        10. Implement Invoice Generation
-        11. Allow Invoice Generation from History form
-        12. Implement Monthly Sales Tax Report (date filter; update Excel template)
-        13. VIN validation: 17 characters exactly
-        14. VIN API? https://vpic.nhtsa.dot.gov/api/Home/Index/LanguageExamples; https://vpic.nhtsa.dot.gov/api/
+       * Implement Invoice Generation
+       * Persist DB changes from History form - https://www.codeproject.com/articles/153407/wpf-and-sqlite-database; https://msdn.microsoft.com/en-us/library/y2ad8t9c.aspx
+       * Implement Monthly Sales Tax Report (date filter; update Excel template)
+       * Re-default FieldListItem InputElements when re-opening the entry screen
+       * Refactoring: Decouple and Generalize classes as much as possible
+       * Allow Invoice Generation from History form
+       * History form date filter?
+       * VIN validation: 17 characters exactly
+       * InitializeTable() - ensure DB columns are consistent with field list (show warning / fix if not?)
+       * On close, back up DB to a configured location
+       * Configurable default values: Table? .cfg file?
+       * Review "using" directives; update appropriately
+       * VIN API? https://vpic.nhtsa.dot.gov/api/Home/Index/LanguageExamples; https://vpic.nhtsa.dot.gov/api/
     */
 
-    public class DBConnection
-    {
-        private const String DbFileName = "9To5.sqlite";
-        private SQLiteConnection Connection;
-
-        public DBConnection()
-        {
-            if (!File.Exists(DbFileName))
-            {
-                SQLiteConnection.CreateFile(DbFileName);
-            }
-
-            Connection = new SQLiteConnection("Data Source=" + DbFileName + ";Version=3;");
-        }
-
-        public void InitializeTable(String _TableName, List<FieldListItem> _List)
-        {
-            try
-            {
-                String nl = "\r\n";
-                String Sql = "CREATE TABLE IF NOT EXISTS " + _TableName + " (" + nl;
-                Sql += "ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE";
-
-                foreach (FieldListItem item in _List)
-                {
-                    Sql += nl + ", " + item.FieldSql();
-                }
-
-                Sql += nl + ")";
-
-                Connection.Open();
-                SQLiteCommand Command = new SQLiteCommand(Sql, Connection);
-                Command.ExecuteNonQuery();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("InitializeTables() Error: {0}", e.Message);
-            }
-            finally
-            {
-                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
-                {
-                    Connection.Close();
-                }
-            }
-        }
-
-        public long InsertRow(String _TableName, List<FieldListItem> _List)
-        {
-            long Result = 0;
-
-            try
-            {
-                Dictionary<String, object> InsertDict = new Dictionary<String, object>();
-
-                foreach (FieldListItem item in _List)
-                {
-                    item.InsertField(InsertDict);
-                }
-
-                if (InsertDict.Count > 0)
-                {
-                    Connection.Open();
-                    SQLiteCommand Command = new SQLiteCommand(Connection);
-                    String FieldNames = "";
-
-                    foreach (KeyValuePair<String, object> entry in InsertDict)
-                    {
-                        if (FieldNames.Length > 0)
-                        {
-                            FieldNames += ", ";
-                        }
-
-                        FieldNames += entry.Key;
-                        Command.Parameters.Add(new SQLiteParameter("@" + entry.Key, entry.Value));
-                    }
-
-                    Command.CommandText = "INSERT INTO " + _TableName + " (" + FieldNames + ")\r\n";
-                    Command.CommandText += "VALUES (" + "@" + FieldNames.Replace(", ", ", @") + ")";
-
-                    Command.CommandType = System.Data.CommandType.Text;
-                    Result = Command.ExecuteNonQuery();
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("InsertRow() Error: {0}", e.Message);
-            }
-            finally
-            {
-                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
-                {
-                    Connection.Close();
-                }
-            }
-
-            return Result;
-        }
-
-        public void PopulateDataGridFromTable(String _TableName, DataGrid _Grid)
-        {
-            Connection.Open();
-
-            try
-            {
-                String SelectSql = "SELECT * FROM " + _TableName;
-                SQLiteDataAdapter da = new SQLiteDataAdapter(SelectSql, Connection);
-                DataTable dt = new DataTable(_TableName);
-                da.Fill(dt);
-                _Grid.DataContext = dt.DefaultView;
-                //da.Update(dt);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("PopulateDataGridFromTable() Error: {0}", e.Message);
-            }
-            finally
-            {
-                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
-                {
-                    Connection.Close();
-                }
-            }
-        }
-    }
+    
 
     public partial class MainWindow : Window
     {
@@ -205,7 +76,7 @@ namespace WpfApplication1
             FieldList.Add(new FieldListItem("Trade-In Miles", "SAL_TRADE_MILES", FieldType.ftInt));
             FieldList.Add(new FieldListItem("Tax Rate", "SAL_TAX_RATE", FieldType.ftReal, ".0915"));
             ComboBox box = new ComboBox();
-            SalesTypeBinder Binder = new SalesTypeBinder(box);
+            SaleTypeBinder Binder = new SaleTypeBinder(box);
             FieldList.Add(new FieldListItem("Type of Sale", "SAL_TYPE", FieldType.ftChoice, "", box));
         }
 
