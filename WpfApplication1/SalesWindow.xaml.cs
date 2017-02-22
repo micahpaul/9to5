@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -122,8 +123,20 @@ namespace WpfApplication1
 
         private void GenerateInvoice()
         {
-            MessageBox.Show("Generating... Just kidding; that's not implemented yet.");
-            File.Copy("invoice_template.xlsx", "new_invoice1.xlsx");
+            String NewFileName = DateTime.Now.ToString("yyyyMMddHHmmssffff") + "_New_Invoice.xlsx";
+            NewFileName = Path.Combine(Path.GetTempPath(), NewFileName);
+
+            try
+            {
+                File.Copy("invoice_template.xlsx", NewFileName);
+                ExcelFindReplace FR = new ExcelFindReplace(FieldList, NewFileName);
+                FR.DoReplace();
+                Process.Start(NewFileName);
+            }
+            catch(Exception E)
+            {
+                MessageBox.Show("Error generating invoice: " + E.Message);
+            }
         }
 
         private bool ValidateFields(out String _InvalidFields)

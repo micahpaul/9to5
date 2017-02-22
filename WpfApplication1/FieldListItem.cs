@@ -110,6 +110,73 @@ namespace WpfApplication1
             }
         }
 
+        public object GetValue( bool _ForSql=false )
+        {
+            object val = null;
+
+            switch (FieldType)
+            {
+                case FieldType.ftChoice:
+                    ComboBox box = InputElement as ComboBox;
+
+                    if (box.SelectedIndex >= 0)
+                    {
+                        val = box.SelectedValue;
+                    }
+
+                    break;
+                case FieldType.ftDate:
+                    DatePicker pck = InputElement as DatePicker;
+
+                    if (pck.SelectedDate != null)
+                    {
+                        String TmpDateFormat = _ForSql ? "yyyy-MM-dd HH:mm:ss.fff" : "MM/dd/yyyy";
+                        val = pck.SelectedDate.Value.Date.ToString(TmpDateFormat);
+                    }
+
+                    break;
+                case FieldType.ftString:
+                case FieldType.ftInt:
+                case FieldType.ftReal:
+                    TextBox txt = InputElement as TextBox;
+
+                    if (txt.Text.Length > 0)
+                    {
+                        if (FieldType == FieldType.ftString)
+                        {
+                            val = txt.Text;
+                        }
+                        else if (FieldType == FieldType.ftInt)
+                        {
+                            int i;
+
+                            if (int.TryParse(txt.Text, out i))
+                            {
+                                val = i;
+                            }
+                        }
+                        else if (FieldType == FieldType.ftReal)
+                        {
+                            double d;
+
+                            if (double.TryParse(txt.Text, out d))
+                            {
+                                val = d;
+                            }
+                        }
+                    }
+
+                    break;
+            }
+
+            if( ( ! _ForSql ) && ( val == null ) )
+            {
+                val = "";
+            }
+
+            return val;
+        }
+
         public bool InputIsValid(out String _InvalidField)
         {
             bool Result = false;
@@ -158,61 +225,7 @@ namespace WpfApplication1
 
         public void InsertField(Dictionary<String, object> _Dict)
         {
-            object val = null;
-
-            switch (FieldType)
-            {
-                case FieldType.ftChoice:
-                    ComboBox box = InputElement as ComboBox;
-
-                    if (box.SelectedIndex >= 0)
-                    {
-                        val = box.SelectedValue;
-                    }
-
-                    break;
-                case FieldType.ftDate:
-                    DatePicker pck = InputElement as DatePicker;
-
-                    if (pck.SelectedDate != null)
-                    {
-                        val = pck.SelectedDate.Value.Date.ToString("yyyy-MM-dd HH:mm:ss.fff");
-                    }
-
-                    break;
-                case FieldType.ftString:
-                case FieldType.ftInt:
-                case FieldType.ftReal:
-                    TextBox txt = InputElement as TextBox;
-
-                    if (txt.Text.Length > 0)
-                    {
-                        if (FieldType == FieldType.ftString)
-                        {
-                            val = txt.Text;
-                        }
-                        else if (FieldType == FieldType.ftInt)
-                        {
-                            int i;
-
-                            if (int.TryParse(txt.Text, out i))
-                            {
-                                val = i;
-                            }
-                        }
-                        else if (FieldType == FieldType.ftReal)
-                        {
-                            double d;
-
-                            if (double.TryParse(txt.Text, out d))
-                            {
-                                val = d;
-                            }
-                        }
-                    }
-
-                    break;
-            }
+            object val = GetValue(true);
 
             if (val != null)
             {
