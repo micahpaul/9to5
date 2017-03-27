@@ -26,9 +26,7 @@ namespace WpfApplication1
 
             // open the workbook. 
             Workbook wb = xlapp.Workbooks.Open(FileName);
-
-            // get the active worksheet. (Replace this if you need to.) 
-            Worksheet ws = (Worksheet)wb.Worksheets["Invoice"];
+            Worksheet ws = (Worksheet)wb.Worksheets["Data"];
             String Delim = "|";
 
             // do replace
@@ -36,6 +34,8 @@ namespace WpfApplication1
             {
                 ws.Cells.Replace(Delim + i.DBFieldName + Delim, i.GetValue());
             }
+
+            wb.Sheets[1].Select();
             
             // save and close. 
             wb.Save();

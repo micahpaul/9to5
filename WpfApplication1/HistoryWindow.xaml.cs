@@ -21,14 +21,13 @@ namespace WpfApplication1
     public partial class HistoryWindow : Window
     {
         private List<FieldListItem> FieldList;
+        private DBConnection DBConnection = new DBConnection();
 
         public HistoryWindow( List<FieldListItem> _FieldList)
         {
-            FieldList = _FieldList;
             InitializeComponent();
-            DBConnection conn = new DBConnection();
-            conn.PopulateDataGridFromTable("TXN", SalesDataGrid);
-
+            FieldList = _FieldList;
+            DBConnection.PopulateDataGridFromTable("TXN", SalesDataGrid);
         }
 
         private void SalesDataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
@@ -37,6 +36,21 @@ namespace WpfApplication1
 
             // Replace all underscores with two underscores, to prevent AccessKey handling
             e.Column.Header = header.Replace("_", "__");
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
+        }
+
+        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            DBConnection.SaveChanges();
+        }
+
+        private void HistoryWindow1_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            DBConnection.Close();
         }
     }
 }

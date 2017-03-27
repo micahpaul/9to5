@@ -12,6 +12,8 @@ namespace WpfApplication1
     {
         private const String DbFileName = "9To5.sqlite";
         private SQLiteConnection Connection;
+        private SQLiteDataAdapter DataAdapter;
+        private DataTable DataTable;
 
         public DBConnection()
         {
@@ -23,15 +25,23 @@ namespace WpfApplication1
             Connection = new SQLiteConnection("Data Source=" + DbFileName + ";Version=3;");
         }
 
-        private int Exec(String _Sql, SQLiteCommand _Cmd=null)
+        public void Close()
+        {
+            if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
+            {
+                Connection.Close();
+            }
+        }
+
+        private int Exec(String _Sql, SQLiteCommand _Cmd = null)
         {
             int Result = 0;
 
             try
             {
                 SQLiteCommand Command = _Cmd;
-                
-                if( Command == null)
+
+                if (Command == null)
                 {
                     Command = new SQLiteCommand(_Sql, Connection);
                 }
@@ -45,10 +55,7 @@ namespace WpfApplication1
             }
             finally
             {
-                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
-                {
-                    Connection.Close();
-                }
+                Close();
             }
 
             return Result;
@@ -114,22 +121,24 @@ namespace WpfApplication1
             try
             {
                 String SelectSql = "SELECT * FROM " + _TableName;
-                SQLiteDataAdapter da = new SQLiteDataAdapter(SelectSql, Connection);
-                DataTable dt = new DataTable(_TableName);
-                da.Fill(dt);
-                _Grid.DataContext = dt.DefaultView;
-                //da.Update(dt);
+                DataAdapter = new SQLiteDataAdapter(SelectSql, Connection);
+                DataTable = new DataTable(_TableName);
+                DataAdapter.Fill(DataTable);
+                _Grid.DataContext = DataTable.DefaultView;
             }
             catch (Exception e)
             {
                 Console.WriteLine("PopulateDataGridFromTable() Error: {0}", e.Message);
             }
-            finally
+        }
+
+        public void SaveChanges()
+        {
+            if (( DataTable != null) && (DataAdapter != null))
             {
-                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
-                {
-                    Connection.Close();
-                }
+                DataAdapter.UpdateCommand = new SQLiteCommandBuilder(DataAdapter).GetUpdateCommand();
+                DataAdapter.Update(DataTable);
+                DataTable.AcceptChanges();
             }
         }
     }

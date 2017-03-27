@@ -1,17 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace WpfApplication1
 {
@@ -21,8 +10,6 @@ namespace WpfApplication1
 
     /*
         To Do:
-       * Implement Invoice Generation
-       * Persist DB changes from History form - https://www.codeproject.com/articles/153407/wpf-and-sqlite-database; https://msdn.microsoft.com/en-us/library/y2ad8t9c.aspx
        * Implement Monthly Sales Tax Report (date filter; update Excel template)
        * Re-default FieldListItem InputElements when re-opening the entry screen
        * Refactoring: Decouple and Generalize classes as much as possible
