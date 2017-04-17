@@ -13,7 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Data.SQLite;
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     /// <summary>
     /// Interaction logic for Window1.xaml

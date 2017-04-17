@@ -4,16 +4,18 @@ using System.IO;
 using System.Data.SQLite;
 using System.Data;
 using System.Windows.Controls;
+using Microsoft.Office.Interop.Excel;
 
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     public class DBConnection
     {
         private const String DbFileName = "9To5.sqlite";
+        private const String BackupDir = "Backups";
         private SQLiteConnection Connection;
         private SQLiteDataAdapter DataAdapter;
-        private DataTable DataTable;
+        private System.Data.DataTable DataTable;
 
         public DBConnection()
         {
@@ -22,14 +24,24 @@ namespace WpfApplication1
                 SQLiteConnection.CreateFile(DbFileName);
             }
 
+            System.IO.Directory.CreateDirectory(BackupDir);
+            File.Copy(DbFileName, Path.Combine( BackupDir, DateTime.Now.ToString("yyyyMMddHHmmss") + "_" + DbFileName));
+
             Connection = new SQLiteConnection("Data Source=" + DbFileName + ";Version=3;");
         }
 
         public void Close()
         {
-            if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
+            try
             {
-                Connection.Close();
+                if (Connection != null && Connection.State != System.Data.ConnectionState.Closed)
+                {
+                    Connection.Close();
+                }
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine("DBConnection.Close() Error: {0}", e.Message);
             }
         }
 
@@ -122,13 +134,82 @@ namespace WpfApplication1
             {
                 String SelectSql = "SELECT * FROM " + _TableName;
                 DataAdapter = new SQLiteDataAdapter(SelectSql, Connection);
-                DataTable = new DataTable(_TableName);
+                DataTable = new System.Data.DataTable(_TableName);
                 DataAdapter.Fill(DataTable);
                 _Grid.DataContext = DataTable.DefaultView;
             }
             catch (Exception e)
             {
                 Console.WriteLine("PopulateDataGridFromTable() Error: {0}", e.Message);
+            }
+        }
+
+        public void ExcelSheetQuery(String _FileName, String _SheetName, String _TableName, String _Where)
+        {
+            try
+            {
+                // Build query string
+                String SelectSql = "SELECT ";
+
+                // open excel.
+                Application xlapp = new Application();
+                xlapp.DisplayAlerts = false;
+
+                // open the workbook. 
+                Workbook wb = xlapp.Workbooks.Open(_FileName);
+                Worksheet ws = (Worksheet)wb.Worksheets[_SheetName];
+
+                // Get select fields from header row
+                bool AddComma = false;
+
+                for( int ix = 1; ix <= ws.Rows[1].Cells.Count && ix <= 30; ix++ )
+                {
+                    if (ws.Rows[1].Cells[ix].Text.Length > 0)
+                    {
+                        if (AddComma)
+                        {
+                            SelectSql += ", ";
+                        }
+
+                        SelectSql += ws.Rows[1].Cells[ix].Text;
+
+                        AddComma = true;
+                    }
+                }
+
+                SelectSql += " FROM " + _TableName + " " + _Where;
+
+                Connection.Open();
+
+                SQLiteCommand cmd = new SQLiteCommand(SelectSql, Connection);
+                SQLiteDataReader rdr = cmd.ExecuteReader();
+
+                int CurrentRow = 2;
+
+                while (rdr.Read())
+                {
+                    for ( int ix = 0; ix < rdr.FieldCount; ix++ )
+                    {
+                        ws.Rows[CurrentRow].Columns[ix + 1] = Convert.ToString(rdr[ix]);
+                    }
+
+                    CurrentRow++;
+                }
+
+                // save and close. 
+                wb.Sheets[1].Select();
+                wb.Save();
+                xlapp.Quit();
+                xlapp = null;
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("ExcelSheetQuery() Error: {0}", e.Message);
+            }
+            finally
+            {
+                Close();
             }
         }
 

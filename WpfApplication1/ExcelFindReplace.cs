@@ -1,43 +1,58 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using Microsoft.Office.Interop.Excel;
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     class ExcelFindReplace
     {
-        List<FieldListItem> FieldList;
         String FileName;
+        String SheetName;
 
-        public ExcelFindReplace(List<FieldListItem> _FieldList, String _FileName )
+        public ExcelFindReplace( String _FileName, String _SheetName )
         {
-            this.FieldList = _FieldList;
             this.FileName = _FileName;
+            this.SheetName = _SheetName;
         }
 
-        public void DoReplace()
+        public void DelimReplace(List<FieldListItem> _FieldList)
         {
-            object m = Type.Missing;
-
             // open excel.
             Application xlapp = new Application();
             xlapp.DisplayAlerts = false;
 
             // open the workbook. 
             Workbook wb = xlapp.Workbooks.Open(FileName);
-            Worksheet ws = (Worksheet)wb.Worksheets["Data"];
+            Worksheet ws = (Worksheet)wb.Worksheets[SheetName];
             String Delim = "|";
 
             // do replace
-            foreach(FieldListItem i in FieldList)
+            foreach(FieldListItem i in _FieldList)
             {
                 ws.Cells.Replace(Delim + i.DBFieldName + Delim, i.GetValue());
             }
 
-            wb.Sheets[1].Select();
-            
             // save and close. 
+            wb.Sheets[1].Select();
+            wb.Save();
+            xlapp.Quit();
+            xlapp = null;
+        }
+
+        public void SimpleReplace(String _OldValue, String _NewValue)
+        {
+            // open excel.
+            Application xlapp = new Application();
+            xlapp.DisplayAlerts = false;
+
+            // open the workbook. 
+            Workbook wb = xlapp.Workbooks.Open(FileName);
+            Worksheet ws = (Worksheet)wb.Worksheets[SheetName];
+
+            ws.Cells.Replace(_OldValue, _NewValue);
+
+            // save and close. 
+            wb.Sheets[1].Select();
             wb.Save();
             xlapp.Quit();
             xlapp = null;

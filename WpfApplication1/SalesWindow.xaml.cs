@@ -7,7 +7,7 @@ using System.Windows.Controls;
 using System.IO;
 
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     /// <summary>
     /// Interaction logic for Window1.xaml
@@ -129,8 +129,8 @@ namespace WpfApplication1
             try
             {
                 File.Copy("invoice_template.xlsx", NewFileName);
-                ExcelFindReplace FR = new ExcelFindReplace(FieldList, NewFileName);
-                FR.DoReplace();
+                ExcelFindReplace FR = new ExcelFindReplace(NewFileName, "Data");
+                FR.DelimReplace(FieldList);
                 Process.Start(NewFileName);
             }
             catch(Exception E)

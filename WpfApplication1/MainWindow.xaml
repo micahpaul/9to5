@@ -1,14 +1,14 @@
-﻿<Window x:Class="WpfApplication1.MainWindow"
+﻿<Window x:Class="SalesEntryAndReporting.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:WpfApplication1"
+        xmlns:local="clr-namespace:SalesEntryAndReporting"
         mc:Ignorable="d"
         Title="9-5 Auto: Sales Entry and Reporting" Height="200" Width="610">
     <Grid Background="#FFF8F8F8">
         <Button x:Name="SaleButton" Content="_Enter New Sale" HorizontalAlignment="Left" Margin="391,23,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="SaleButton_Click"/>
-        <Button x:Name="ReportButton" Content="_Generate Reports" HorizontalAlignment="Left" Margin="391,108,0,0" VerticalAlignment="Top" Width="170" Height="25"/>
+        <Button x:Name="ReportButton" Content="_Generate Reports" HorizontalAlignment="Left" Margin="391,108,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="ReportButton_Click"/>
         <Image x:Name="image" HorizontalAlignment="Left" Height="120" Margin="24,23,0,0" VerticalAlignment="Top" Width="336" Source="9-5Logo.png"/>
         <Button x:Name="EditButton" Content="_Review / Edit Sales Data" HorizontalAlignment="Left" Margin="391,66,0,0" VerticalAlignment="Top" Width="170" Height="25" Click="EditButton_Click"/>
 

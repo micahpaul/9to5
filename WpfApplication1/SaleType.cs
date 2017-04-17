@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Controls;
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     public enum SaleType { Retail, Wholesale, RetailOutOfState };
     public struct SaleTypeInfo

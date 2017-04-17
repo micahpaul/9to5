@@ -4,7 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 
 
-namespace WpfApplication1
+namespace SalesEntryAndReporting
 {
     public enum FieldType { ftUndefined, ftString, ftInt, ftReal, ftDate, ftChoice };
 
@@ -13,14 +13,23 @@ namespace WpfApplication1
         public String DisplayName = "";
         public String DBFieldName = "";
         public FieldType FieldType = FieldType.ftUndefined;
-        public UIElement InputElement;
+        bool Required = false;
+        public String DefaultValue = "";
+        int MinLen = 0;
+        int MaxLen = 0;
+        public UIElement InputElement = null;
 
         public FieldListItem(String _DisplayName, String _DBFieldName, FieldType _Type,
-                             String _Default = "", UIElement _InputElement = null)
+                             bool _Required=true, String _Default = "", int _MinLen=0, 
+                             int _MaxLen=0, UIElement _InputElement = null)
         {
-            DisplayName = _DisplayName;
-            DBFieldName = _DBFieldName;
-            FieldType = _Type;
+            DisplayName     = _DisplayName;
+            DBFieldName     = _DBFieldName;
+            FieldType       = _Type;
+            Required        = _Required;
+            DefaultValue    = _Default;
+            MinLen          = _MinLen;
+            MaxLen          = _MaxLen;
 
             if (_InputElement != null)
             {
@@ -96,12 +105,12 @@ namespace WpfApplication1
             if (InputElement is TextBox)
             {
                 TextBox box = InputElement as TextBox;
-                box.Text = "";
+                box.Text = DefaultValue;
             }
             else if (InputElement is DatePicker)
             {
                 DatePicker pck = InputElement as DatePicker;
-                pck.Text = "";
+                pck.Text = DefaultValue;
             }
             else if (InputElement is ComboBox)
             {
@@ -185,9 +194,25 @@ namespace WpfApplication1
             {
                 case FieldType.ftChoice:
                 case FieldType.ftDate:
+                    {
+                        Result = true;
+                        break;
+                    }
                 case FieldType.ftString:
                     {
                         Result = true;
+
+                        if ( MinLen > 0 || MaxLen > 0 )
+                        {
+                            TextBox box = InputElement as TextBox;
+
+                            if (Required || (box.Text.Length > 0))
+                            {
+                                Result = Result && (MinLen == 0 || box.Text.Length >= MinLen);
+                                Result = Result && (MaxLen == 0 || box.Text.Length <= MaxLen);
+                            }
+                        }
+
                         break;
                     }
                 case FieldType.ftInt:
@@ -218,6 +243,10 @@ namespace WpfApplication1
                     Result = false;
                     break;
             }
+
+            object TmpVal = GetValue(true);
+
+            Result = Result && ( ( ! Required ) || (TmpVal != null ) );
 
             _InvalidField = Result ? "" : DisplayName;
             return Result;
